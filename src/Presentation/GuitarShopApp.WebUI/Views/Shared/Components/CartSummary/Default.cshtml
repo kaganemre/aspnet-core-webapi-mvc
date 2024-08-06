@@ -1,0 +1,12 @@
+@model CartViewModel
+
+@if(Model?.Items.Count() > 0)
+{
+    <div class="d-flex">
+        <a href="/Cart/Basket" class="nav-link active btn btn-info">Go To Cart</a>
+        <small class="nav-link text-white">
+            @Model?.Items.Sum(i => i.Quantity) item
+            [@Model?.CalculateTotal() @ViewBag.currencyDollar]
+        </small>
+    </div>
+}

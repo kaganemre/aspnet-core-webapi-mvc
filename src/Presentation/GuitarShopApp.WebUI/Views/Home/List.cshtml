@@ -1,0 +1,88 @@
+@model IEnumerable<Product>
+@{
+    int i = 0;
+}
+</style>
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="/products"
+                class="list-group-item list-group-item-action list-group-item-light @(ViewBag.SelectedCategory == null ? "active":"")">All
+                Categories</a>
+            @foreach (var category in ViewBag.Categories)
+            {
+                <a asp-action="List" asp-route-category="@category.Url"
+                    class="list-group-item list-group-item-action list-group-item-light @(ViewBag.SelectedCategory == category.Url ? "active":"")">@category.Name</a>
+            }
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="row">
+            @foreach (var product in Model)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card p-1" style="width: 18rem;">
+                        <img src="/img/@product.Image" class="img-fluid" alt="...">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">@product.Name</h5>
+                            <p class="card-text">@product.Price <i class="bi bi-currency-dollar"></i></p>
+                            <form asp-controller="Cart" asp-action="Basket" method="post" class="d-inline">
+                                <input type="hidden" asp-for="@product.Id" name="Id">
+                                <button type="submit" class="btn btn-outline-dark">Add to Cart</button>
+                            </form>
+                            @if (User.IsInRole("admin"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-primary">Edit</a>
+                                <form asp-action="Delete" class="d-inline">
+                                    <input type="hidden" id="productId_@product.Id" value="@product.Id">
+                                    <button type="submit" id="btnDelete_@product.Id" class="btn btn-outline-danger dlt">Delete</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                i++;
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        const allButton = document.querySelectorAll("form > button.dlt");
+        const buttonArray = [...allButton];
+        
+        for (let x of buttonArray) {
+            x.addEventListener("click", e => {
+                if (confirm("Do you really want to delete this product?")) {
+                    async function postJSON(data) {
+                        try {
+                            const response = await fetch("/Home/Delete", {
+                                method: "POST",
+                                headers: {
+                                    "Accept": "application/json",
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(data)
+                            });
+                            const result = await response.json();
+                            x.parentNode.parentNode.parentNode.parentElement.remove();
+                        } catch (error) {
+                            console.error("Error:", error);
+                        }
+                    }
+
+                    const data = { Id: x.previousElementSibling.value };
+                    postJSON(data);
+                    e.preventDefault();
+                }
+                else
+                    e.preventDefault();
+            });
+        }
+
+    });
+
+</script>

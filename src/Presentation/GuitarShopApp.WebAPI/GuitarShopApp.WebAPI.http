@@ -1,0 +1,6 @@
+@GuitarShopApp.WebAPI_HostAddress = http://localhost:5191
+
+GET {{GuitarShopApp.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

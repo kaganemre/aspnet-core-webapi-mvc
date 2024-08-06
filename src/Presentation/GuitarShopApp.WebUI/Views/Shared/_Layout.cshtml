@@ -1,0 +1,32 @@
+@if(TempData["message"] != null)
+{
+    <div class="alert alert-warning text-center">
+        @TempData["message"]
+    </div>
+}
+
+@{
+    ViewBag.currencyDollar= Html.Raw("<i class='bi bi-currency-dollar'></i>");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/lib/bootstrapicons/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <title>GuitarShopApp</title>
+</head>
+
+<body>
+    <partial name="_Navbar" />
+    <div class="container my-3">
+        @RenderBody()
+    </div>
+
+     <footer class="fixed-bottom bg-dark text-white text-center py-3">GuitarShopApp | &copy; 2024</footer>
+
+    <script src="/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

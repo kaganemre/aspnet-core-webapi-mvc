@@ -1,0 +1,38 @@
+@model ProductViewModel
+@* @{
+ViewData["Title"] = "Create";
+} *@
+
+<h2>Add Product</h2>
+<hr>
+<form asp-controller="Home" asp-action="Create" method="post" enctype="multipart/form-data" novalidate>
+    <div asp-validation-summary="All"></div>
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control">
+        <span asp-validation-for="Name"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Price" class="form-label"></label>
+        <input asp-for="Price" class="form-control">
+        <span asp-validation-for="Price"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description"></span>
+    </div>
+    <div class="input-group mb-3">
+        <input type="file" name="imageFile" id="imageFile" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label asp-for="CategoryId" class="form-label">Category</label>
+        <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select">
+            <option value="" selected disabled>Choose</option>
+
+        </select>
+        <span asp-validation-for="CategoryId"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add</button>
+</form>
