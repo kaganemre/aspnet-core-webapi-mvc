@@ -108,9 +108,10 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
+builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -125,11 +126,10 @@ app.UseCors();
 app.UseMiddleware<LoggerMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.UseHangfireDashboard("/hangfire");
 
-
+app.UseExceptionHandler();
 
 app.Run();
 

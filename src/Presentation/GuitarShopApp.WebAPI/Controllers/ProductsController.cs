@@ -29,7 +29,6 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [ExceptionFilter]
     [AllowAnonymous]
     public async Task<IActionResult> GetProduct(int? id)
     {
@@ -44,7 +43,6 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [ExceptionFilter]
     public async Task<IActionResult> UpdateProduct(int id, ProductDTO model)
     {
         if (id != model.Id)
@@ -57,7 +55,6 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [ExceptionFilter]
     public async Task<IActionResult> DeleteProduct(int? id)
     {
         _productService.Delete(await _productService.GetById(id));

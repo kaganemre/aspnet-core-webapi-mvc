@@ -29,9 +29,7 @@ public class ProductService : IProductService
     }
     public async Task<Product> GetById(int? id)
     {
-        var product = await _unitOfWork.Products.GetById(id);
-        if (product == null)
-        throw new DataNotFoundException(nameof(Product), id);
+        var product = await _unitOfWork.Products.GetById(id) ?? throw new NotFoundException();
         return product;
     }
 
