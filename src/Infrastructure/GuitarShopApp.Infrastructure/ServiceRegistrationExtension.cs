@@ -10,7 +10,7 @@ namespace GuitarShopApp.Infrastructure
         {
             IConfigurationRoot configuration = new ConfigurationBuilder().
             AddJsonFile(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), 
-            @"../../Presentation/GuitarShopApp.WebUI/appsettings.Development.json")), optional: true)
+            @"../../Presentation/GuitarShopApp.WebAPI/appsettings.Development.json")), optional: true)
             .Build();
             
             services.AddTransient<IEmailService, SmtpEmailService>(i =>

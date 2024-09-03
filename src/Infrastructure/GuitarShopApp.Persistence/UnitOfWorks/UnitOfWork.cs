@@ -16,6 +16,7 @@ public class UnitOfWork : IUnitOfWork
     private ProductRepository? _productRepository;
     private CategoryRepository? _categoryRepository;
     private OrderRepository? _orderRepository;
+    private UserRepository? _userRepository;
 
     public IProductRepository Products => 
             _productRepository = _productRepository ?? new ProductRepository(_context);
@@ -23,6 +24,9 @@ public class UnitOfWork : IUnitOfWork
             _categoryRepository = _categoryRepository ?? new CategoryRepository(_context);
     public IOrderRepository Orders => 
             _orderRepository = _orderRepository ?? new OrderRepository(_context);
+    public IUserRepository Users => 
+            _userRepository = _userRepository ?? new UserRepository(_context);
+
 
     public void Dispose()
     {

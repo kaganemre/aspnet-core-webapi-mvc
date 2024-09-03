@@ -1,30 +1,29 @@
+using System.Security.Claims;
+using AutoMapper;
+using GuitarShopApp.Application.DTO;
 using GuitarShopApp.Application.Interfaces.Services;
 using GuitarShopApp.Application.Models;
+using GuitarShopApp.WebUI.ApiService;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GuitarShopApp.WebUI.Controllers;
 
 public class AccountController : Controller
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly UserApiService _userApiService;
+    private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
 
-    public AccountController(UserManager<IdentityUser> userManager,
-                            RoleManager<IdentityRole> roleManager,
-                            SignInManager<IdentityUser> signInManager,
-                            IEmailService emailService)
+    public AccountController(
+                            IEmailService emailService,
+                            UserApiService userApiService,
+                            IMapper mapper)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
-        _signInManager = signInManager;
+        _userApiService = userApiService;
+        _mapper = mapper;
         _emailService = emailService;
-        _signInManager.AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-
     }
 
     public IActionResult Login()
@@ -37,47 +36,47 @@ public class AccountController : Controller
     {
         if (ModelState.IsValid)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userApiService.Login(_mapper.Map<LoginDTO>(model));
 
-            if (user != null)
+            if (user.Email != null)
             {
-                await _signInManager.SignOutAsync();
-
-                if (!await _userManager.IsEmailConfirmedAsync(user))
+                if (!user.EmailConfirmed)
                 {
-                    ModelState.AddModelError("", "Verify your account.");
+                    TempData["message"] = "Click on the confirmation email sent to your account.";
                     return View(model);
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, true);
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.Name, user.FullName),
+                    new("Email", user.Email),
+                    new(ClaimTypes.Role, user.RoleName)
+                };
 
-                if (result.Succeeded)
-                {
-                    await _userManager.ResetAccessFailedCountAsync(user);
-                    await _userManager.SetLockoutEndDateAsync(user, null);
+                var claimsIdentity = new ClaimsIdentity(
+                    claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                    return RedirectToAction("Index", "Home");
-                }
-                else if (result.IsLockedOut)
-                {
-                    var lockoutDate = await _userManager.GetLockoutEndDateAsync(user);
-                    var timeLeft = lockoutDate.Value - DateTime.UtcNow;
-                    ModelState.AddModelError("", $"Your account has been locked. Try after {timeLeft.Minutes} minutes.");
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Wrong password.");
-                }
+                var authProperties = new AuthenticationProperties { RedirectUri = "/Home/Index", IsPersistent = model.RememberMe };
+
+                await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
             }
             else
             {
-                ModelState.AddModelError("", "Incorrect email.");
+                ModelState.AddModelError("", "Email or Password is incorrect");
             }
         }
 
         return View(model);
     }
 
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction("Login");
+    }
 
     public IActionResult Register()
     {
@@ -89,64 +88,43 @@ public class AccountController : Controller
     {
         if (ModelState.IsValid)
         {
-            var user = new IdentityUser
-            {
-                UserName = model.UserName,
-                Email = model.Email,
-            };
+            await _userApiService.CreateUser(model);
 
-            IdentityResult result = await _userManager.CreateAsync(user, model.Password);
+            var token = Guid.NewGuid().ToString();
+            var url = Url.Action("ConfirmEmail", "Account", new { model.Email, token });
 
-            if (result.Succeeded)
-            {
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var url = Url.Action("ConfirmEmail", "Account", new { user.Id, token });
+            await _emailService.SendEmailAsync(model.Email, "Account Verification", $"<a href='http://localhost:5164{url}'>Please click on the link to confirm your email account</a>");
 
-                await _emailService.SendEmailAsync(user.Email, "Account Verification", $"<a href='http://localhost:5164{url}'>Please click on the link to confirm your email account</a>");
-
-
-                TempData["message"] = "Click on the confirmation email sent to your account.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            foreach (IdentityError err in result.Errors)
-            {
-                ModelState.AddModelError("", err.Description);
-            }
+            TempData["message"] = "Click on the confirmation email sent to your account.";
+            return RedirectToAction("Login", "Account");
         }
 
         return View(model);
     }
 
-    public async Task<IActionResult> ConfirmEmail(string Id, string token)
+    public async Task<IActionResult> ConfirmEmail(string email, string token)
     {
-        if (Id == null || token == null)
+        if (email == null || token == null)
         {
             TempData["message"] = "Invalid verification key.";
             return View();
         }
 
-        var user = await _userManager.FindByIdAsync(Id);
+        var user = await _userApiService.GetByEmail(email);
 
         if (user != null)
         {
-            var result = await _userManager.ConfirmEmailAsync(user, token);
+            user.EmailConfirmed = true;
+            await _userApiService.UpdateUser(user);
 
-            if (result.Succeeded)
-            {
-                TempData["message"] = "Your account has been confirmed.";
-                return RedirectToAction("Login", "Account");
-            }
+            TempData["message"] = "Your account has been confirmed.";
+            return RedirectToAction("Login", "Account");
         }
 
         TempData["message"] = "User not found.";
         return View();
     }
-    public async Task<IActionResult> Logout()
-    {
-        await _signInManager.SignOutAsync();
-        return RedirectToAction("Login");
-    }
+
     public IActionResult AccessDenied()
     {
         return View();
@@ -157,15 +135,15 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ForgotPassword(string Email)
+    public async Task<IActionResult> ForgotPassword(string email)
     {
-        if (string.IsNullOrEmpty(Email))
+        if (string.IsNullOrEmpty(email))
         {
             TempData["message"] = "Please enter your email address.";
             return View();
         }
 
-        var user = await _userManager.FindByEmailAsync(Email);
+        var user = await _userApiService.GetByEmail(email);
 
         if (user == null)
         {
@@ -173,24 +151,24 @@ public class AccountController : Controller
             return View();
         }
 
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var url = Url.Action("ResetPassword", "Account", new { user.Id, token });
+        var token = Guid.NewGuid().ToString();
+        var url = Url.Action("ResetPassword", "Account", new { user.Email, token });
 
-        await _emailService.SendEmailAsync(Email, "Reset Password", $"<a href='http://localhost:5164{url}'>Click on the link to reset your password</a>");
+        await _emailService.SendEmailAsync(user.Email, "Reset Password", $"<a href='http://localhost:5164{url}'>Click on the link to reset your password</a>");
 
         TempData["message"] = "You can reset your password with the link sent to your e-mail address";
 
         return View();
     }
 
-    public IActionResult ResetPassword(string Id, string token)
+    public IActionResult ResetPassword(string email, string token)
     {
-        if (Id == null || token == null)
+        if (email == null || token == null)
         {
             return RedirectToAction("Login");
         }
 
-        var model = new ResetPasswordModel { Token = token };
+        var model = new ResetPasswordModel { Email = email, Token = token };
         return View(model);
     }
 
@@ -199,23 +177,23 @@ public class AccountController : Controller
     {
         if (ModelState.IsValid)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userApiService.GetByEmail(model.Email);
             if (user == null)
             {
                 TempData["message"] = "There are no users matching this email address.";
                 return RedirectToAction("Login");
             }
-            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
 
-            if (result.Succeeded)
+            try
             {
+                user.Password = model.Password;
+                await _userApiService.UpdateUser(user);
                 TempData["message"] = "Your password has been changed.";
                 return RedirectToAction("Login");
             }
-
-            foreach (IdentityError err in result.Errors)
+            catch (Exception e)
             {
-                ModelState.AddModelError("", err.Description);
+                ModelState.AddModelError("", e.Message);
             }
         }
         return View(model);

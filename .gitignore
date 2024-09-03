@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# other
+src/Presentation/GuitarShopApp.WebUI/wwwroot/lib/
+.vscode/

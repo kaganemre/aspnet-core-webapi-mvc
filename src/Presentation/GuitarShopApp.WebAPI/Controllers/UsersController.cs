@@ -15,6 +15,7 @@ public class UsersController : ControllerBase
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly IConfiguration _configuration;
+
     public UsersController(UserManager<IdentityUser> userManager,
                             SignInManager<IdentityUser> signInManager,
                             IConfiguration configuration
@@ -23,7 +24,6 @@ public class UsersController : ControllerBase
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
-
     }
 
     [HttpPost("register")]
@@ -32,7 +32,7 @@ public class UsersController : ControllerBase
         
         var user = new IdentityUser
         {
-            UserName = model.UserName,
+            UserName = model.FullName,
             Email = model.Email
         };
 
@@ -45,6 +45,7 @@ public class UsersController : ControllerBase
 
         return BadRequest(result.Errors);
     }
+
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDTO model)
     {
@@ -52,7 +53,7 @@ public class UsersController : ControllerBase
 
         if(user == null)
         {
-            return BadRequest(new { message="Email is incorrect"});
+            return BadRequest(new { message="Email is incorrect" });
         }
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
@@ -65,7 +66,6 @@ public class UsersController : ControllerBase
         }
         return Unauthorized();
     }
-
     private object GenerateJWT(IdentityUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -83,7 +83,6 @@ public class UsersController : ControllerBase
 
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    
+        return tokenHandler.WriteToken(token); 
     }
 }

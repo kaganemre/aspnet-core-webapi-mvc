@@ -1,25 +1,23 @@
-@model IEnumerable<Product>
+@model IEnumerable<ProductDTO>
 
-@{ string[] guitarists = {"/img/dimebag.png", "/img/slash.png", "/img/alexi-laiho.webp"}; }
+@{ string[] guitarists = {"dimebag.png", "slash.png", "alexi-laiho.webp"}; }
 
 <div id="myCarousel" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-inner">
         @foreach (var g in guitarists)
         {
             <div class="carousel-item @(g == guitarists[0] ? "active" : "") h-90">
-                <img src="@g" class="mx-auto d-block w-80 rounded">
+                <img src="http://localhost:5191/api/stream/@g" class="mx-auto d-block w-80 rounded">
             </div>
         }
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#myCarousel" data-bs-slide="prev" style="margin-left: 250px;">
-        <span class="carousel-control-prev-icon  
-                             bg-black rounded-circle" aria-hidden="true">
+        <span class="carousel-control-prev-icon bg-black rounded-circle" aria-hidden="true">
         </span>
         <span class="visually-hidden">Previous</span>
     </button>
     <button class="carousel-control-next" type="button" data-bs-target="#myCarousel" data-bs-slide="next" style="margin-right: 250px;">
-        <span class="carousel-control-next-icon  
-                             bg-black rounded-circle" aria-hidden="true">
+        <span class="carousel-control-next-icon bg-black rounded-circle" aria-hidden="true">
         </span>
         <span class="visually-hidden">
             Next
@@ -30,10 +28,10 @@
 
     <h1 class="text-center mt-5">Signature Series Guitars</h1>
     <div class="container-fluid d-flex justify-content-center mt-3 p-3 gap-3">
-        @foreach(var p in Model)
+        @foreach(var p in Model.Skip(1).Take(3))
         {
             <div class="card p-3" style="width: 18rem;">
-                <img src="/img/@p.Image" class="card-img-top" alt="...">
+                <img src="http://localhost:5191/api/stream/@p.Image" class="card-img-top" alt="...">
                 <div class="card-body ">
                     <h5 class="card-title">@p.Name</h5>
                     <p class="card-text">@p.Description</p>
@@ -50,22 +48,21 @@
          document.querySelector(".fixed-bottom").classList.remove("fixed-bottom");
      });
 
-    var myCarousel = document.getElementById('myCarousel');
-    new bootstrap.Carousel(myCarousel);
+    const myCarousel = document.getElementById('myCarousel');
 
-    var carouselItems =
+    let carouselItems =
         document.querySelectorAll('.carousel-item');
     carouselItems.forEach(function (item, index) {
-        item.addEventListener('click', function () {
+        item.addEventListener('click', () =>{
             new bootstrap.Carousel(myCarousel).to(index);
         });
     });
 
-    myCarousel.addEventListener('mouseenter', function () {
+    myCarousel.addEventListener('mouseenter', () => {
         new bootstrap.Carousel(myCarousel).pause();
     });
 
-    myCarousel.addEventListener('mouseleave', function () {
+    myCarousel.addEventListener('mouseleave', () => {
         new bootstrap.Carousel(myCarousel).cycle();
     });
 

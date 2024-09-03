@@ -1,3 +1,4 @@
+using GuitarShopApp.Application.Exceptions;
 using GuitarShopApp.Application.Interfaces.Services;
 using GuitarShopApp.Application.Interfaces.UnitOfWork;
 using GuitarShopApp.Domain.Entities;
@@ -17,6 +18,13 @@ public class OrderService : IOrderService
         await _unitOfWork.Orders.CreateAsync(entity);
         await _unitOfWork.SaveAsync();
     }
+
+    public async Task<Order> GetById(int? id)
+    {
+        var order = await _unitOfWork.Orders.GetById(id) ?? throw new NotFoundException();
+        return order;
+    }
+
     public void Update(Order entity)
     {
         _unitOfWork.Orders.Update(entity);

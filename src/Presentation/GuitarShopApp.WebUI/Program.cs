@@ -1,63 +1,60 @@
 using GuitarShopApp.Infrastructure;
-using GuitarShopApp.Persistence;
-using GuitarShopApp.Application;
-using GuitarShopApp.Persistence.Context;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using GuitarShopApp.Application.Models;
 using GuitarShopApp.Persistence.Services;
+using GuitarShopApp.WebUI.ApiService;
+using GuitarShopApp.Application.Interfaces.Services;
+using GuitarShopApp.Application.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    });
 
-builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddIdentityCore<IdentityUser>().AddRoles<IdentityRole>()
-                        .AddSignInManager<SignInManager<IdentityUser>>()
-                        .AddEntityFrameworkStores<IdentityContext>().AddDefaultTokenProviders();
-                        
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices();
+builder.Services.AddTransient<IEmailService, SmtpEmailService>(i =>
+                new SmtpEmailService(
+                    builder.Configuration["EmailService:Host"],
+                    builder.Configuration.GetValue<int>("EmailService:Port"),
+                    builder.Configuration.GetValue<bool>("EmailService:EnableSSL"),
+                    builder.Configuration["EmailService:Username"],
+                    builder.Configuration["EmailService:Password"]
+                ));
+
+builder.Services.AddAutoMapper(typeof(GeneralMapping).Assembly);
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<CartViewModel>(scs => SessionCartService.GetCart(scs));
 
+var baseUri = "http://localhost:5191/api/";
 
-builder.Services.AddAuthentication(options=>
+if (!builder.Environment.IsDevelopment())
 {
-    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    baseUri = "http://core-webapi:5192/api/";
+}
 
-})
-.AddCookie(options =>
-{
-    options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Account/AccessDenied";
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-});
- 
-builder.Services.Configure<IdentityOptions>(options => {
-    options.Password.RequiredLength = 5;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireDigit = false;
-    
-    options.User.RequireUniqueEmail = true;
+builder.Services.AddHttpClient<ProductApiService>(options =>
+    options.BaseAddress = new Uri(baseUri + "products/")
+);
+builder.Services.AddHttpClient<CategoryApiService>(options =>
+    options.BaseAddress = new Uri(baseUri + "categories/")
+);
+builder.Services.AddHttpClient<OrderApiService>(options =>
+    options.BaseAddress = new Uri(baseUri + "orders/")
+);
+builder.Services.AddHttpClient<UserApiService>(options =>
+    options.BaseAddress = new Uri(baseUri + "shop/")
+);
 
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-
-    options.SignIn.RequireConfirmedEmail = true;
-
-});
-
-        
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -75,14 +72,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.MapControllerRoute("products", "products/{category?}", new { controller = "Home", action = "List"});
+app.MapControllerRoute("products", "products/{category?}", new { controller = "Home", action = "List" });
 
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-
-IdentitySeedData.IdentityTestUser(app.Services);
 
 app.Run();

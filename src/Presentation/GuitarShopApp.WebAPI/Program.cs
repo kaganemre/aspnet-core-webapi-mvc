@@ -1,6 +1,5 @@
 using System.Text;
 using GuitarShopApp.Application;
-using GuitarShopApp.Application.Interfaces.Services;
 using GuitarShopApp.Infrastructure;
 using GuitarShopApp.Infrastructure.Attributes;
 using GuitarShopApp.Persistence;
@@ -8,31 +7,46 @@ using GuitarShopApp.Persistence.Background;
 using GuitarShopApp.Persistence.Context;
 using GuitarShopApp.WebAPI.Middlewares;
 using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices();
-builder.Services.AddTransient<IEmailService, SmtpEmailService>(i =>
-                new SmtpEmailService(
-                    builder.Configuration["EmailService:Host"],
-                    builder.Configuration.GetValue<int>("EmailService:Port"),
-                    builder.Configuration.GetValue<bool>("EmailService:EnableSSL"),
-                    builder.Configuration["EmailService:Username"],
-                    builder.Configuration["EmailService:Password"]
-                ));
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5164", "http://localhost:5167", "https://localhost:7259")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        });
+});
+
+var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<ShopAppDbContext>(options =>
+        options.UseNpgsql(conn));
+        builder.Services.AddDbContext<IdentityContext>(options =>
+        options.UseNpgsql(conn));
+
 builder.Services.AddHangfire(x => 
 {
-    x.UseSqlServerStorage(builder.Configuration["ConnectionStrings:HangfireConnection"]);
+    x.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(builder.Configuration["ConnectionStrings:HangfireConnection"]));
+    if(5 == 5)
     RecurringJob.AddOrUpdate<Job>("SendNewProductsMailForUsers", y => y.SendNewProductsMailForUsers(), "00 20 * * *");
 });
 builder.Services.AddHangfireServer();
+
+builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices();
+
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityContext>();
 
@@ -122,14 +136,29 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
-app.UseCors();
+app.UseStaticFiles();
 app.UseMiddleware<LoggerMiddleware>();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.UseHangfireDashboard("/hangfire");
+
+
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new [] { new MyAuthorizationFilter() }
+});
 
 app.UseExceptionHandler();
 
-app.Run();
 
+using var scope = app.Services.CreateScope();
+await using var dbContext = scope.ServiceProvider.GetRequiredService<ShopAppDbContext>();
+if(dbContext.Database.GetPendingMigrations().Any())
+await dbContext.Database.MigrateAsync();
+
+
+IdentitySeedData.IdentityTestUser(app.Services);
+
+app.Run();

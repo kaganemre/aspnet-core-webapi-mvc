@@ -1,6 +1,5 @@
 using AutoMapper;
 using GuitarShopApp.Application.DTO;
-using GuitarShopApp.Infrastructure.Attributes;
 using GuitarShopApp.Application.Interfaces.Services;
 using GuitarShopApp.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +33,14 @@ public class ProductsController : ControllerBase
     {
         return Ok(_mapper.Map<ProductDTO>(await _productService.GetById(id)));
     }
-
+    
+    [HttpGet("get-by-category/{name?}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetProductsByCategory(string name="")
+    {
+        return Ok(_mapper.Map<IEnumerable<ProductDTO>>(await _productService.GetProductsByCategory(name)));
+    }
+    
     [HttpPost]
     public async Task<IActionResult> CreateProduct(ProductDTO model)
     {
@@ -42,14 +48,10 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProduct(int id, ProductDTO model)
+    [HttpPut]
+    public async Task<IActionResult> UpdateProduct(ProductDTO model)
     {
-        if (id != model.Id)
-        {
-            return BadRequest();
-        }
-        await _productService.GetById(id);
+        await _productService.GetById(model.Id);
         await _productService.UpdateAsync(_mapper.Map<Product>(model));
         return NoContent();
     }

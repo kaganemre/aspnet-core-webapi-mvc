@@ -13,16 +13,27 @@ public class ShopAppDbContext : DbContext, IShopAppContext
     public DbSet<Product> Products { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<User>().HasData(
+                new List<User> {
+                    new() { Id =1, FullName="Admin", Email="info@adminuser.com", Password="Password_536", RoleName="admin", EmailConfirmed=true},
+                    new() { Id =2, FullName="Paul Gilbert", Email="info@paulgilbert.com", Password="Paul_536", EmailConfirmed=true}
+                }
+            );
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
         modelBuilder.Entity<Category>()
               .HasIndex(u => u.Url)
               .IsUnique();
 
-        
         modelBuilder.Entity<Category>().HasData(
                 new List<Category> {
                     new() { Id =1, Name="Guitar", Url="guitar"},
@@ -46,5 +57,5 @@ public class ShopAppDbContext : DbContext, IShopAppContext
 
     }
 
- 
+
 }

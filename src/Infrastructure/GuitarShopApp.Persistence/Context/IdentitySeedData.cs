@@ -21,12 +21,9 @@ public class IdentitySeedData
             await context.Database.MigrateAsync();
         }
 
-        
         var user = await userManager.FindByNameAsync(adminUser);
-        
         var role = await roleManager.FindByNameAsync(userRole);
         
-
         if(user == null)
         {
             user = new IdentityUser 

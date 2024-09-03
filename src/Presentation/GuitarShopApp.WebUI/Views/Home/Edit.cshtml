@@ -1,8 +1,7 @@
-@model ProductViewModel
-@* @{
-    ViewData["Title"] = "Create";
-} *@
+@model ProductDTO
 
+<h2>Edit Product</h2>
+<hr>
 <form asp-controller="Home" asp-action="Edit" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="All"></div>
     <input type="hidden" asp-for="Id">
@@ -33,3 +32,11 @@
     </div>
     <button type="submit" class="btn btn-primary">Edit</button>
 </form>
+
+<script>
+  const uri = "/Home/Edit";
+</script>
+
+@section Scripts {
+   <script src="/js/app.js"></script>
+}

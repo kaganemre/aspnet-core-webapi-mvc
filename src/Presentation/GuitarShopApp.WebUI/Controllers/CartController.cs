@@ -1,16 +1,20 @@
-using GuitarShopApp.Application.Interfaces.Services;
+using AutoMapper;
 using GuitarShopApp.Application.Models;
+using GuitarShopApp.Domain.Entities;
+using GuitarShopApp.WebUI.ApiService;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GuitarShopApp.WebUI.Controllers;
 
 public class CartController : Controller
 {
-    private readonly IProductService _productService;
-    public CartController(IProductService productService, CartViewModel cartService)
+    private readonly ProductApiService _productApiService;
+    private readonly IMapper _mapper;
+    public CartController(ProductApiService productApiService, CartViewModel cartService, IMapper mapper)
     {
-        _productService = productService;
+        _productApiService = productApiService;
         Cart = cartService;
+        _mapper = mapper;
     }
 
     public CartViewModel? Cart { get; set; }
@@ -22,11 +26,12 @@ public class CartController : Controller
     [HttpPost]
     public async Task<IActionResult> Basket(int Id)
     {
-        var product = await _productService.GetById(Id);
-
+        var product = await _productApiService.GetById(Id);
+        
         if (product != null)
         {
-            Cart?.AddItem(product, 1);
+            var p = _mapper.Map<Product>(product);
+            Cart?.AddItem(p, 1);
         }
 
         return View(Cart);

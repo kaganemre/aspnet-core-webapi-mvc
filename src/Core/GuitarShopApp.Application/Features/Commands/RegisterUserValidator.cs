@@ -7,7 +7,7 @@ public class RegisterUserValidator : AbstractValidator<UserDTO>
 {
     public RegisterUserValidator()
     {
-        RuleFor(u => u.UserName)
+        RuleFor(u => u.FullName)
             .NotEmpty()
             .WithMessage("A valid 'UserName' is required.");
         RuleFor(u => u.Email)
@@ -16,7 +16,7 @@ public class RegisterUserValidator : AbstractValidator<UserDTO>
         RuleFor(u => u.Password)
             .NotEmpty()
             .WithMessage("The 'Password' field is required.")
-            .MaximumLength(10)
+            .MaximumLength(15)
             .MinimumLength(3)
             .WithMessage("'Password' must be between 3 and 10 characters.");
         RuleFor(u => u.ConfirmPassword)

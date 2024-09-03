@@ -1,0 +1,53 @@
+version: '3.4'
+
+networks:
+  dev:
+    driver: bridge
+
+services:
+  core-webapi:
+    image: docker.io/library/guitarshopapp-webapi
+    depends_on:
+      - "app_db"
+    container_name: gshopapp-webapi
+    ports:
+      - "5191:5192"
+    build:
+      context: .
+      dockerfile: Dockerfile-WebAPI
+    environment:
+      - ConnectionStrings__DefaultConnection=User ID=postgres;Password=postgres;Server=app_db;Port=5432;Database=GuitarShopApp;Pooling=true;
+      - ASPNETCORE_URLS=http://*:5192
+    networks:
+      - dev
+
+  app_db:
+    image: kaganemre/pgsql-custom:latest
+    container_name: app_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=GuitarShopApp
+    ports:
+      - "5433:5432"
+    restart: always
+    volumes:
+      - app_data:/var/lib/postgresql/data
+    networks:
+      - dev
+  
+  core-app:
+    image: docker.io/library/guitarshopapp-webui
+    container_name: gshopapp-webui
+    ports:
+      - "5167:5164"
+    build:
+      context: .
+      dockerfile: Dockerfile-WebUI
+    environment:
+      - ASPNETCORE_URLS=http://*:5164
+    networks:
+      - dev
+
+volumes:
+  app_data:

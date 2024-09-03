@@ -58,7 +58,7 @@ public class LoggerMiddleware : IMiddleware
 
         response.Body.Seek(0, SeekOrigin.Begin);
 
-        string responseText = $"Response Body : {responseBody}";
+        string responseText = $"Response Body : {Encoding.UTF8.GetString(Encoding.Default.GetBytes(responseBody))}";
 
         return responseText;
     }

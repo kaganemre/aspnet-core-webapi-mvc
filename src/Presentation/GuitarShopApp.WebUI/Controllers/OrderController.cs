@@ -1,7 +1,7 @@
 using AutoMapper;
-using GuitarShopApp.Application.Interfaces.Services;
+using GuitarShopApp.Application.DTO;
 using GuitarShopApp.Application.Models;
-using GuitarShopApp.Domain.Entities;
+using GuitarShopApp.WebUI.ApiService;
 using Iyzipay;
 using Iyzipay.Model;
 using Iyzipay.Request;
@@ -13,14 +13,17 @@ namespace GuitarShopApp.WebUI.Controllers;
 public class OrderController : Controller
 {
     private readonly CartViewModel cart;
-    private readonly IOrderService _orderService;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly OrderApiService _orderApiService;
+    private readonly UserApiService _userApiService;
     private readonly IMapper _mapper;
-    public OrderController(CartViewModel cartService, IOrderService orderService, UserManager<IdentityUser> userManager, IMapper mapper)
+    public OrderController(CartViewModel cartService, 
+    OrderApiService orderApiService, 
+    IMapper mapper,
+    UserApiService userApiService)
     {
         cart = cartService;
-        _orderService = orderService;
-        _userManager = userManager;
+        _orderApiService = orderApiService;
+        _userApiService = userApiService;
         _mapper = mapper;
     }
     public IActionResult Checkout()
@@ -29,7 +32,7 @@ public class OrderController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Checkout(OrderModel model)
+    public async Task<IActionResult> Checkout(OrderModel model, string email)
     {
         if (cart.Items.Count == 0)
         {
@@ -38,18 +41,24 @@ public class OrderController : Controller
 
         if (ModelState.IsValid)
         {
-
-            var order = _mapper.Map<Order>(model);
+            var order = _mapper.Map<OrderDTO>(model);
             order.OrderDate = DateTime.Now;
-            order.UserId = _userManager.GetUserId(User) ?? "";
+            var user = await _userApiService.GetByEmail(email);
+            order.UserId = user.Id.ToString();
+            order.OrderItems = cart.Items.Select(i => new OrderItemDTO
+            {
+                ProductId = i.Product.Id,
+                Price = i.Product.Price,
+                Quantity = i.Quantity
+            }).ToList();
 
             model.Cart = cart;
             var payment = ProcessPayment(model);
             if (payment.Status == "success")
             {
-                await _orderService.CreateAsync(order);
+                var currentOrder = await _orderApiService.CreateAsync(order);
                 cart.Clear();
-                return RedirectToAction("Completed", new { OrderId = order.Id });
+                return RedirectToAction("Completed", new { OrderId = currentOrder.Id });
             }
             model.Cart = cart;
             return View(model);
@@ -64,8 +73,8 @@ public class OrderController : Controller
     private Payment ProcessPayment(OrderModel model)
     {
         Options options = new Options();
-        options.ApiKey = "sandbox-FbReLsercrffh19i7BKv4mnGfmk9Lsun";
-        options.SecretKey = "sandbox-gOaCYCvZjk9hYps3XiklBI6pU15lWd4j";
+        options.ApiKey = "";
+        options.SecretKey = "";
         options.BaseUrl = "https://sandbox-api.iyzipay.com";
 
         CreatePaymentRequest request = new CreatePaymentRequest();

@@ -1,8 +1,5 @@
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-
 namespace GuitarShopApp.Application.Models;
 
-[ValidateNever]
 public class ProductViewModel
 {
     public int Id { get; set; }

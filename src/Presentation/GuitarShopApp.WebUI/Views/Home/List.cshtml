@@ -1,8 +1,8 @@
-@model IEnumerable<Product>
+@model IEnumerable<ProductDTO>
 @{
     int i = 0;
 }
-</style>
+
 <div class="row">
     <div class="col-md-3">
         <div class="list-group">
@@ -22,7 +22,7 @@
             {
                 <div class="col-md-4 mb-3">
                     <div class="card p-1" style="width: 18rem;">
-                        <img src="/img/@product.Image" class="img-fluid" alt="...">
+                        <img src="http://localhost:5191/api/stream/@product.Image" class="img-fluid" alt="...">
                         <div class="card-body text-center">
                             <h5 class="card-title">@product.Name</h5>
                             <p class="card-text">@product.Price <i class="bi bi-currency-dollar"></i></p>
@@ -35,7 +35,8 @@
                                 <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-primary">Edit</a>
                                 <form asp-action="Delete" class="d-inline">
                                     <input type="hidden" id="productId_@product.Id" value="@product.Id">
-                                    <button type="submit" id="btnDelete_@product.Id" class="btn btn-outline-danger dlt">Delete</button>
+                                    <button type="submit" id="btnDelete_@product.Id"
+                                        class="btn btn-outline-danger dlt">Delete</button>
                                 </form>
                             }
                         </div>
@@ -51,9 +52,10 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
 
+        @* Delete buttons found on Bootstrap cards are taken. They are converted into an array with the spread operator(...) *@
         const allButton = document.querySelectorAll("form > button.dlt");
         const buttonArray = [...allButton];
-        
+
         for (let x of buttonArray) {
             x.addEventListener("click", e => {
                 if (confirm("Do you really want to delete this product?")) {
@@ -68,12 +70,13 @@
                                 body: JSON.stringify(data)
                             });
                             const result = await response.json();
+                            @* After the product is deleted from the database, the bootstrap card is deleted from the HTML page. *@
                             x.parentNode.parentNode.parentNode.parentElement.remove();
                         } catch (error) {
                             console.error("Error:", error);
                         }
                     }
-
+                    @* The product id value of the hidden element is sent to the action method. *@
                     const data = { Id: x.previousElementSibling.value };
                     postJSON(data);
                     e.preventDefault();

@@ -1,39 +1,38 @@
-using GuitarShopApp.Application.Interfaces.Services;
-using GuitarShopApp.Domain.Entities;
-using GuitarShopApp.Application.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
+using GuitarShopApp.WebUI.ApiService;
+using GuitarShopApp.Application.DTO;
 
 namespace GuitarShopApp.WebUI.Controllers;
 
 [Authorize(Roles = "admin")]
 public class HomeController : Controller
 {
-    private readonly IProductService _productService;
-    private readonly ICategoryService _categoryService;
+    private readonly ProductApiService _productApiService;
+    private readonly CategoryApiService _categoryApiService;
     private readonly IMapper _mapper;
-    public HomeController(IProductService productService, ICategoryService categoryService, IMapper mapper)
+    public HomeController(ProductApiService productApiService, CategoryApiService categoryApiService, IMapper mapper)
     {
-        _productService = productService;
-        _categoryService = categoryService;
+        _productApiService = productApiService;
+        _categoryApiService = categoryApiService;
         _mapper = mapper;
     }
 
     [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        return View(await _productService.GetHomePageProducts());
+        return View(await _productApiService.GetAll());
     }
 
     [AllowAnonymous]
     public async Task<IActionResult> List(string category)
     {
-        ViewBag.Categories = await _categoryService.GetAll();
+        ViewBag.Categories = await _categoryApiService.GetAll();
         ViewBag.SelectedCategory = RouteData?.Values["category"];
 
-        return View(await _productService.GetProductsByCategory(category));
+        return View(await _productApiService.GetProductsByCategory(category));
     }
 
     [HttpGet]
@@ -45,22 +44,19 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(ProductViewModel model, IFormFile imageFile)
+    public async Task<IActionResult> Create([FromForm] ProductDTO model)
     {
         if (ModelState.IsValid)
         {
-            
             try
             {
-                var entity = _mapper.Map<Product>(model);
-                entity.Image = await AddImage(imageFile);
-                await _productService.CreateAsync(entity);
+                await _productApiService.CreateAsync(model);
                 return RedirectToAction("List");
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
-                throw;
+                throw new Exception(e.Message);
             }
         }
 
@@ -70,19 +66,17 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Edit(int? id)
     {
-
-        var entity = await _productService.GetById(id);
-        var model = _mapper.Map<ProductViewModel>(entity);
+        var model = await _productApiService.GetById(id);
         await CategoryList();
         return View(model);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(ProductViewModel model, IFormFile imageFile)
+    public async Task<IActionResult> Edit([FromForm] ProductDTO model)
     {
         if (ModelState.IsValid)
         {
-            var entity = await _productService.GetById(model.Id);
+            var entity = await _productApiService.GetById(model.Id);
             if (entity == null)
             {
                 return NotFound();
@@ -90,9 +84,8 @@ public class HomeController : Controller
 
             try
             {
-                entity = _mapper.Map<Product>(model);
-                entity.Image = await AddImage(imageFile);
-                await _productService.UpdateAsync(entity);
+                entity = _mapper.Map<ProductDTO>(model);
+                await _productApiService.UpdateAsync(entity);
                 return RedirectToAction("List");
             }
             catch (Exception)
@@ -107,17 +100,16 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<JsonResult> Delete([FromBody] ProductViewModel model)
+    public async Task<JsonResult> Delete([FromBody] ProductDTO model)
     {
-        var entity = await _productService.GetById(model.Id);
+        var entity = await _productApiService.GetById(model.Id);
 
         if (entity != null)
         {
-            _productService.Delete(entity);
+            await _productApiService.DeleteAsync(entity);
         }
 
         return Json(new { model.Id });
-
     }
     private async Task<string> AddImage(IFormFile imageFile)
     {
@@ -129,10 +121,9 @@ public class HomeController : Controller
 
         return randomFileName;
     }
-
     private async Task CategoryList()
     {
-        ViewBag.Categories = new SelectList(await _categoryService.GetAll(), "Id", "Name");
+        ViewBag.Categories = new SelectList(await _categoryApiService.GetAll(), "Id", "Name");
     }
     
 

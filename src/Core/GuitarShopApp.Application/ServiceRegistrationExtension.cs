@@ -17,6 +17,7 @@ public static class ServiceRegistrationExtension
         serviceCollection.AddTransient<IProductService, ProductService>();
         serviceCollection.AddTransient<ICategoryService, CategoryService>();
         serviceCollection.AddTransient<IOrderService, OrderService>();
+        serviceCollection.AddTransient<IUserService, UserService>();
         serviceCollection.AddAutoMapper(typeof(GeneralMapping).Assembly);
         
         serviceCollection.AddValidatorsFromAssemblyContaining<CreateProductValidator>();
