@@ -12,6 +12,8 @@ Repository Design Pattern
 
 Unit Of Work Design Pattern
 
+Entity Framework Core
+
 PostgreSQL
 
 Cookie-Based Authentication, Token-Based Authentication(JWT)
