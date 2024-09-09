@@ -38,6 +38,10 @@ Rest API
 
 CORS
 
+HTML
+
+CSS
+
 Modern JavaScript
 
 Bootstrap 5
