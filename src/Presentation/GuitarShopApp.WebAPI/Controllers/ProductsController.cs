@@ -44,8 +44,8 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProduct(ProductDTO model)
     {
-        await _productService.CreateAsync(_mapper.Map<Product>(model));
-        return NoContent();
+        var newProduct = _mapper.Map<ProductDTO>(await _productService.CreateAsync(_mapper.Map<Product>(model)));
+        return CreatedAtAction(nameof(GetProduct), new { id = newProduct.Id }, newProduct);
     }
 
     [HttpPut]
@@ -53,7 +53,7 @@ public class ProductsController : ControllerBase
     {
         await _productService.GetById(model.Id);
         await _productService.UpdateAsync(_mapper.Map<Product>(model));
-        return NoContent();
+        return Ok(model);
     }
 
     [HttpDelete("{id}")]
