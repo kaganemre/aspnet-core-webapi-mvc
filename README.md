@@ -1,4 +1,5 @@
-# 🎸 GuitarShopApp – ASP.NET Core 8 Onion Architecture E-Commerce  
+# 🎸 GuitarShopApp – ASP.NET Core 8 Onion Architecture E-Commerce
+
 🧱 ASP.NET Core Web API + MVC  
 
 💼 E-ticaret ürün yönetimi, kullanıcı rolleri ve ödeme akışı içeren çok katmanlı .NET 8 uygulaması.  
@@ -6,8 +7,7 @@
 Bu proje, **Onion Architecture** prensipleriyle yapılandırılmış bir **ASP.NET Core 8** uygulamasıdır.  
 Onion mimarisi, uygulama katmanları arasındaki bağımlılığı en aza indirerek değişikliklerin en düşük maliyetle yapılabilmesini sağlar.  
 
-Web API ve MVC (UI) katmanları ayrı tutulmuş olup, API üzerinden CRUD işlemlerini destekleyen çok katmanlı bir yapı sunar.  
-MVC projesi API üzerinden verileri alıp dinamik view'lar oluşturur.  
+Web API ve MVC (UI) katmanları ayrı tutulmuş olup, API üzerinden CRUD işlemlerini destekleyen çok katmanlı bir yapı sunar. MVC projesi API üzerinden verileri alıp dinamik view'lar oluşturur.  
 
 Kullanıcı rollerine göre ürün listeleme, ekleme, güncelleme ve silme işlemleri yapılabilir.  
 Ürünler sayfasından ürünler sepete eklenip ödeme yapılabilir.  
